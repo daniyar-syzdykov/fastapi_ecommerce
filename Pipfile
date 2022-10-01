@@ -9,6 +9,9 @@ sqlalchemy = "*"
 autopep8 = "*"
 asyncpg = "*"
 uvicorn = {extras = ["standard"], version = "*"}
+databases = "*"
+psycopg2-binary = "*"
+marshmallow = "*"
 
 [dev-packages]
 

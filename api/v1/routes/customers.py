@@ -9,6 +9,6 @@ customer_router = APIRouter(
 
 
 @customer_router.get('')
-async def get_all_users(request):
+async def get_all_users():
     customers = await Customer.get_all()
-    return Response({'success': True, 'data': customers})
+    return {'success': True, 'data': customers}

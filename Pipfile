@@ -12,6 +12,7 @@ uvicorn = {extras = ["standard"], version = "*"}
 databases = "*"
 psycopg2-binary = "*"
 marshmallow = "*"
+alembic = "*"
 
 [dev-packages]
 

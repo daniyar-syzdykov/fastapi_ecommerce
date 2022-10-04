@@ -1,6 +1,24 @@
-from marshmallow import Schema, fields
+from pydantic import BaseModel
 
 
-class CustomerSchema(Schema):
-    id = fields.Integer(required=True)
-    username = fields.String(required=True)
+class BaseProductSchema(BaseModel):
+    id: int
+    name: str
+    price: int | float
+
+
+class BaseCustomerSchema(BaseModel):
+    id: int
+    username: str
+
+
+class CustomerSchema(BaseCustomerSchema):
+    wish_list: list[BaseProductSchema]
+    cart: list[BaseProductSchema]
+
+    class Config:
+        orm_mode = True
+
+
+class ProductSchema(BaseProductSchema):
+    wish_list: list[BaseCustomerSchema]

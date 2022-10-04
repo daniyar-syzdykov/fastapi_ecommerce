@@ -11,14 +11,3 @@ app.include_router(main_router)
 @app.on_event('startup')
 async def start():
     await session.init()
-    # await session.create_all()
-
-
-# @app.get('/')
-# async def root():
-#     query = Customer.get_all()
-#     print(query)
-#     ret = await session.execute(query)
-#     print(ret)
-
-#     return {'message': 'Hello World!!!'}

@@ -1,9 +1,6 @@
 from .session import async_db_session as session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, update, delete
-from sqlalchemy import Column, Integer
-from sqlalchemy.orm import declared_attr
-from . import Base
 
 
 class DBMixin:
@@ -15,9 +12,10 @@ class DBMixin:
             await session.commit()
         except IntegrityError:
             await session.rollback()
+        else:
+            return new_object.__dict__
         finally:
             await session.close()
-        return new_object.__dict__
 
     @classmethod
     async def get_all(cls):
@@ -25,13 +23,13 @@ class DBMixin:
         result = None
         try:
             result = await session.execute(query)
-        except Exception as e:
-            print('This exception ocured -----> ', e)
-        else:
             result = [i[0] for i in result.all()]
+        except Exception as e:
+            raise e
+        else:
+            return result
         finally:
             await session.close()
-        return result
 
     @classmethod
     async def update(cls, id, **kwargs):
@@ -39,27 +37,39 @@ class DBMixin:
             update(cls).where(cls.id == id).values(**kwargs)
             .execution_options(synchronize_session="fetch")
         )
-        result = await session.execute(query)
-        result = [i[0] for i in result.all()]
-        await session.commit()
-        await session.close()
+        try:
+            result = await session.execute(query)
+            result = [i[0] for i in result.all()]
+        except Exception as e:
+            raise e
+        else:
+            await session.commit()
+        finally:
+            await session.close()
 
     @classmethod
     async def get_by_id(cls, id):
         query = select(cls).where(cls.id == id)
-        result = await session.execute(query)
-        if result is None:
-            return None
-        result = result.one_or_none()
-        await session.close()
-        return result[0] if result else None
+        try:
+            result = await session.execute(query)
+            result = result.one_or_none()
+        except Exception as e:
+            raise e
+        else:
+            return result[0] if result else None
+        finally:
+            await session.close()
 
     @classmethod
     async def delete(cls, id):
-        """no idea what to do with this method"""
         query = delete(cls).where(cls.id == id)
-        result = await session.execute(query)
-        await session.close()
-        return {'success': True}
+        try:
+            await session.execute(query)
+        except Exception as e:
+            raise e
+        else:
+            return {'success': True}
+        finally:
+            await session.close()
 
     __mapper_args__ = {"eager_defaults": True}

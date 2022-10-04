@@ -21,17 +21,6 @@ class AsyncDatabaseSession:
             self._engine, expire_on_commit=False, class_=AsyncSession
         )()
         async with self._engine.begin() as conn:
-            print(Base.metadata.tables)
-            # await conn.run_sync(Base.metadata.create_all)
-            # await asyncio.sleep(1)
-            await conn.run_sync(Base.metadata.create_all)
-
-    async def create_all(self):
-        print('INITIALIZING')
-        async with self._engine.begin() as conn:
-            print(Base.metadata.tables)
-            # await conn.run_sync(Base.metadata.create_all)
-            # await asyncio.sleep(1)
             await conn.run_sync(Base.metadata.create_all)
 
 

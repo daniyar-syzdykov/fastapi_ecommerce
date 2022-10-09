@@ -2,12 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import Response
 from database.models import Customer
 from pydantic import BaseModel
-from database.schemas import CustomerSchema
-
-
-
-class CustomerCreationSchema(BaseModel):
-    username: str
+from database.schemas import CustomerResultSchema, CustomerCreationSchema
 
 
 customer_router = APIRouter(
@@ -21,12 +16,11 @@ async def get_all_users():
     return {'success': True, 'data': customers}
 
 
-
 @customer_router.get('/{id}')
 async def get_user_by_id(id: int):
     try:
         db_customer = await Customer.get_by_id(id)
-        customer = CustomerSchema.from_orm(db_customer)
+        customer = CustomerResultSchema.from_orm(db_customer)
     except Exception as e:
         raise e
     else:

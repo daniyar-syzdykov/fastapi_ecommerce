@@ -21,6 +21,7 @@ class AsyncDatabaseSession:
             self._engine, expire_on_commit=False, class_=AsyncSession
         )()
         async with self._engine.begin() as conn:
+            print(Base.metadata.tables.keys())
             await conn.run_sync(Base.metadata.create_all)
 
 

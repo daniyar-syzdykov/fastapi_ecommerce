@@ -2,12 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import Response
 from database.models import Product
 from pydantic import BaseModel
-
-
-class ProductCreationSchema(BaseModel):
-    name: str
-    description: str | None
-    price: int
+from database.schemas import ProductCreationSchema
 
 
 product_router = APIRouter(

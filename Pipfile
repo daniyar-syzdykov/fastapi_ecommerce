@@ -13,6 +13,8 @@ databases = "*"
 psycopg2-binary = "*"
 marshmallow = "*"
 alembic = "*"
+fastapi-users = {extras = ["sqlalchemy"], version = "*"}
+aiohttp = "*"
 
 [dev-packages]
 

@@ -2,4 +2,4 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
-from .models import Customer
+# from .models import Customer

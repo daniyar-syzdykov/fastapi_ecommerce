@@ -24,5 +24,8 @@ class AsyncDatabaseSession:
             print(Base.metadata.tables.keys())
             await conn.run_sync(Base.metadata.create_all)
 
+    async def close_connections(self):
+        await self._engine.dispose()
+
 
 async_db_session: AsyncSession = AsyncDatabaseSession()

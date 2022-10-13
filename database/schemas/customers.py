@@ -14,3 +14,8 @@ class CustomerResultSchema(BaseCustomerSchema):
 class CustomerCreationSchema(BaseModel):
     username: str
     password: str
+    password_2: str
+
+class CustomerAuthSchema(BaseModel):
+    username: str
+    password: str

@@ -2,7 +2,6 @@ import uuid
 import datetime
 from sqlalchemy import Integer, String, Column, ForeignKey, MetaData, Boolean, DateTime
 from sqlalchemy.orm import relationship, joinedload
-from ..session import async_db_session as session
 from ..base import DBMixin
 from .. import Base
 

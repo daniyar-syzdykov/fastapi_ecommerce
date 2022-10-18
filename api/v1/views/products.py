@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from database.models import Product
 from pydantic import BaseModel
 from database.schemas import ProductCreationSchema
+from database.session import get_session
 
 
 product_router = APIRouter(
@@ -11,9 +12,9 @@ product_router = APIRouter(
 
 
 @product_router.get('')
-async def get_all_products():
+async def get_all_products(session=Depends(get_session)):
     try:
-        products = await Product.get_all()
+        products = await Product.get_all(session=session)
     except Exception as e:
         raise e
     else:
@@ -21,19 +22,20 @@ async def get_all_products():
 
 
 @product_router.get('/{id}')
-async def get_products_by_id(id: int):
+async def get_products_by_id(id: int, session=Depends(get_session)):
     try:
-        product = await Product.get_by_id(id)
+        product = await Product.get_by_id(id, session=session)
+        # print(dir(product))
     except Exception as e:
         raise e
     else:
-        return {'success': True, 'data': product.__dict__}
+        return {'success': True, 'data': product}
 
 
 @product_router.post('')
-async def create_new_produt(data: ProductCreationSchema):
+async def create_new_produt(data: ProductCreationSchema, session=Depends(get_session)):
     try:
-        await Product.create(**data.dict())
+        await Product.create(**data.dict(), session=session)
     except Exception as e:
         raise e
     else:

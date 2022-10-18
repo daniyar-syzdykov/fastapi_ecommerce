@@ -15,6 +15,10 @@ marshmallow = "*"
 alembic = "*"
 fastapi-users = {extras = ["sqlalchemy"], version = "*"}
 aiohttp = "*"
+pytest = "*"
+pytest-asyncio = "*"
+requests = "*"
+httpx = "*"
 
 [dev-packages]
 

@@ -1,8 +1,9 @@
 from sqlalchemy import Table, Integer, String, Column, ForeignKey, MetaData, Boolean, update, delete, select
 from sqlalchemy.orm import relationship, joinedload
-from ..session import async_db_session as session
 from ..base import DBMixin
 from .. import Base
+
+
 class Product(Base, DBMixin):
     __tablename__ = 'products'
 

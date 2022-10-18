@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 from database.models import Customer
 from pydantic import BaseModel, parse_obj_as
 from database.schemas import CustomerResultSchema, CustomerCreationSchema
-from database.session import async_db_session as session
+# from database.session import async_db_session as session
+from database.session import get_session
+
+# from server import app
 
 
 customer_router = APIRouter(
@@ -12,9 +15,9 @@ customer_router = APIRouter(
 
 
 @customer_router.get('')
-async def get_all_users():
+async def get_all_users(session=Depends(get_session)):
     try:
-        db_customers = await Customer.get_all(session)
+        db_customers = await Customer.get_all(session=session)
         customers = parse_obj_as(list[CustomerResultSchema], db_customers)
     except Exception as e:
         raise e
@@ -23,9 +26,9 @@ async def get_all_users():
 
 
 @customer_router.get('/{id}')
-async def get_user_by_id(id: int):
+async def get_user_by_id(id: int, session=Depends(get_session)):
     try:
-        db_customer = await Customer.get_by_id(id, session)
+        db_customer = await Customer.get_by_id(id, session=session)
         customer = CustomerResultSchema.from_orm(db_customer)
     except Exception as e:
         raise e
@@ -34,29 +37,29 @@ async def get_user_by_id(id: int):
 
 
 @customer_router.post('')
-async def register_new_user(data: CustomerCreationSchema):
-    customer = await Customer.exists(data.username, session)
+async def register_new_user(data: CustomerCreationSchema, session=Depends(get_session)):
+    customer = await Customer.exists(data.username, session=session)
     if customer is not None:
-        raise HTTPException(status_code=400, detail=f'User with username "{data.username}" already exists')
+        raise HTTPException(
+            status_code=400, detail=f'User with username "{data.username}" already exists')
 
     if data.password != data.password_2:
-        raise HTTPException(status_code=400, detail='Passwords does not match') 
+        raise HTTPException(status_code=400, detail='Passwords does not match')
 
     data = data.dict()
     data.pop('password_2')
     try:
-        await Customer.create(session, **data)
+        await Customer.create(session=session, **data)
     except Exception as e:
         raise e
     else:
         return {'success': True}
 
 
-
 @customer_router.get('/exists/{username}')
-async def user_exists(username: str):
+async def user_exists(username: str, session=Depends(get_session)):
     try:
-        result = await Customer.exists(username, session)
+        result = await Customer.exists(username, session=session)
     except Exception as e:
         raise e
     else:
@@ -64,9 +67,9 @@ async def user_exists(username: str):
 
 
 @customer_router.get('/orders')
-async def get_users_orders():
+async def get_users_orders(session=Depends(get_session)):
     try:
-        await Customer.get_all(session)
+        await Customer.get_all(session=session)
     except Exception as e:
         raise e
     else:

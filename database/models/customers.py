@@ -1,6 +1,7 @@
 from sqlalchemy import Table, Integer, String, Column, ForeignKey, MetaData, Boolean, update, delete, select, exists
 from sqlalchemy.orm import relationship, joinedload
 # from ..session import async_db_session as session
+# from ..session import session
 from ..base import DBMixin
 from .. import Base
 from database.utils.hasher import Hasher
@@ -35,8 +36,8 @@ class Customer(Base, DBMixin):
             raise e
         else:
             return result if result else None
-        finally:
-            await session.close()
+        # finally:
+        #     await session.close()
 
     @classmethod
     async def get_all(cls, session):

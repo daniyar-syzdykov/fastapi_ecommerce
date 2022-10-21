@@ -1,3 +1,4 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from . import Base
@@ -42,3 +43,11 @@ async def get_session():
         yield session
     finally:
         await session.close()
+
+
+async def create_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+async def close_connections():
+    await engine.dispose()

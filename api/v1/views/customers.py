@@ -39,7 +39,7 @@ async def get_user_by_id(id: int, session=Depends(get_session)):
 @customer_router.post('')
 async def register_new_user(data: CustomerCreationSchema, session=Depends(get_session)):
     customer = await Customer.exists(data.username, session=session)
-    if customer is not None:
+    if customer:
         raise HTTPException(
             status_code=400, detail=f'User with username "{data.username}" already exists')
 

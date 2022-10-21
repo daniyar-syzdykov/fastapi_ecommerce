@@ -7,6 +7,8 @@ Create Date: 2022-10-04 12:35:12.196713
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 
 # revision identifiers, used by Alembic.
@@ -17,8 +19,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column('customers', sa.Column('is_admin', sa.Boolean(), default=False))
-    op.add_column('customers', sa.Column('is_active', sa.Boolean(), default=True))
+    op.add_column('customers', sa.Column('uuid', UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()")))
 
 
 def downgrade() -> None:

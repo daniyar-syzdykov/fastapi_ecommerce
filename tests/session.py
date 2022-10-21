@@ -14,7 +14,6 @@ TABLES_CREATED = False
 
 async def create_tables():
     async with engine.begin() as conn:
-        print('-----------------> ', Base.metadata.tables)
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 

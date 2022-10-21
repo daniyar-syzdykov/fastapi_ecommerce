@@ -1,8 +1,9 @@
+import uuid
 from pydantic import BaseModel
 
 
 class BaseCustomerSchema(BaseModel):
-    id: int
+    uuid: uuid.UUID
     username: str
 
 

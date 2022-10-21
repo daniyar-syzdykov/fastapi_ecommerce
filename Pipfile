@@ -19,6 +19,7 @@ pytest = "*"
 pytest-asyncio = "*"
 requests = "*"
 httpx = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
 
 [dev-packages]
 

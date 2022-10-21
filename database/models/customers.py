@@ -1,16 +1,17 @@
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, MetaData, Boolean, update, delete, select, exists
+import uuid
+from sqlalchemy import Table, Integer, String, Column, ForeignKey, MetaData, Boolean, text, update, delete, select, exists
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, joinedload
-# from ..session import async_db_session as session
-# from ..session import session
 from ..base import DBMixin
 from .. import Base
-from database.utils.hasher import Hasher
+from security.hasher import Hasher
 
 
 class Customer(Base, DBMixin):
     __tablename__ = 'customers'
 
     id = Column(Integer(), primary_key=True)
+    _uuid = Column(UUID(as_uuid=True), default=uuid.uuid4)
     username = Column(String(255), unique=True, nullable=False)
     _password = Column(String(), nullable=False)
     is_admin = Column(Boolean(), default=False)
@@ -19,6 +20,10 @@ class Customer(Base, DBMixin):
     wish_list = relationship(
         'Product', secondary='customer_wish_list', back_populates='wish_list')
     orders = relationship('Order', back_populates='customer')
+
+    @property
+    def uuid(self):
+        return str(self._uuid)
 
     @property
     def password(self):
@@ -54,7 +59,7 @@ class Customer(Base, DBMixin):
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
         return result[0] if result else None
-    
+
     @classmethod
     async def get_by_username(cls, username: str, session):
         query = select(Customer).where(Customer.username == username).options(
@@ -62,13 +67,14 @@ class Customer(Base, DBMixin):
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
         return result[0] if result else None
-    
+
     @classmethod
     async def exists(cls, username, session):
         query = select(Customer).where(Customer.username == username)
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
         return result
+
 
 customer_wish_list = Table(
     'customer_wish_list',

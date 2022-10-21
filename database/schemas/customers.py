@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 from . import BaseProductSchema, BaseCustomerSchema, BaseOrderSchema
 
@@ -16,6 +17,10 @@ class CustomerCreationSchema(BaseModel):
     password: str
     password_2: str
 
+
 class CustomerAuthSchema(BaseModel):
     username: str
-    password: str
+    uuid: str
+
+    class Config:
+        orm_mode = True

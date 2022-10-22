@@ -1,4 +1,3 @@
-import uuid
 from pydantic import BaseModel
 from sqlalchemy.orm.collections import InstrumentedList
 from . import BaseProductSchema, BaseCustomerSchema, BaseOrderSchema, as_form

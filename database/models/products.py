@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, MetaData, Boolean, update, delete, select
+from sqlalchemy import Integer, String, Column, ForeignKey, Boolean, update, delete, select
 from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.dialects.postgresql import UUID
 from ..base import DBMixin

@@ -1,4 +1,3 @@
-import uuid
 import inspect
 from fastapi import Form
 from pydantic import BaseModel
@@ -48,4 +47,3 @@ class BaseProductSchema(BaseScheme):
 class BaseOrderSchema(BaseScheme):
     id: int
     created_at: str
-    # products: list[BaseProductSchema]

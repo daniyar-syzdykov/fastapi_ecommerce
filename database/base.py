@@ -62,5 +62,6 @@ class DBMixin:
     async def exists(cls, id, session):
         query = exists(cls).where(cls.id == id)
         result = await DBMixin._execute_query(query, session)
+        return True if result else False
 
     __mapper_args__ = {"eager_defaults": True}

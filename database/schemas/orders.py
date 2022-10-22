@@ -1,6 +1,5 @@
-from pydantic import BaseModel
+from . import BaseScheme, BaseProductSchema
 
 
-
-class OderSchema(BaseModel):
-    pass
+class OderSchema(BaseScheme):
+    products: list[BaseProductSchema]

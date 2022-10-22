@@ -1,5 +1,3 @@
-from pydantic import BaseModel, parse_obj_as
-from sqlalchemy.orm.collections import InstrumentedList
 from . import BaseCustomerSchema, BaseProductSchema, BaseScheme, as_form
 
 

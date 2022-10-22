@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import Response
 from database.models import Customer
-from pydantic import BaseModel, parse_obj_as
 from database.schemas import CustomerAuthSchema, BaseCustomerSchema, CustomerResultSchema
 from database.session import get_session
 from security.hasher import Hasher
@@ -17,19 +15,19 @@ auth_router = APIRouter(
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/token')
 
 
-async def get_current_user(token=Depends(oauth2_scheme), session=Depends(get_session)):
+async def get_current_user(token=Depends(oauth2_scheme), session=Depends(get_session)) -> Customer:
     decoded_token = JWT.decode_token(token)
     username = decoded_token.get('username')
     user_from_db: Customer = await Customer.get_by_username(username, session)
 
     if not user_from_db:
-        raise HTTPException('This user does not exists')
+        raise HTTPException(
+            status_code=400, detail='This user does not exists')
 
     if not user_from_db.is_active:
-        raise HTTPException('This user is inactive')
+        raise HTTPException(status_code=400, detail='This user is inactive')
 
-    user = CustomerResultSchema.from_orm(user_from_db)
-    return user
+    return user_from_db
 
 
 @auth_router.post('/token')
@@ -51,4 +49,5 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session=Depend
 
 @auth_router.get('/me')
 async def me(current_user=Depends(get_current_user)):
-    return {'current_user': current_user}
+    user = CustomerResultSchema.from_orm(current_user)
+    return {'current_user': user}

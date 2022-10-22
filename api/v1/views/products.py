@@ -33,7 +33,7 @@ async def get_products_by_id(id: int, session=Depends(get_session)):
 
 
 @product_router.post('')
-async def create_new_produt(data: ProductCreationSchema, session=Depends(get_session)):
+async def create_new_produt(data: ProductCreationSchema=Depends(ProductCreationSchema.as_form), session=Depends(get_session)):
     try:
         await Product.create(**data.dict(), session=session)
     except Exception as e:

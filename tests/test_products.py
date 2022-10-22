@@ -10,7 +10,8 @@ async def test_creating_new_product(test_env: Env, random_product: tuple[str, st
         'description': random_product[1],
         'price': random_product[2]
     }
-    response: Response = await test_env.client.post('/api/v1/products', json=new_product)
+    response: Response = await test_env.client.post('/api/v1/products', data=new_product)
+    print(response.json())
     assert response.status_code == 200
     assert response.json() == {'success': True}
 

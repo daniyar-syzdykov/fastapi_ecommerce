@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Table, Integer, String, Column, ForeignKey, MetaData, Boolean, text, update, delete, select, exists
+from sqlalchemy import Table, Integer, String, Column, ForeignKey, Boolean, text, update, delete, select
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, joinedload
 from ..base import DBMixin
@@ -41,8 +41,6 @@ class Customer(Base, DBMixin):
             raise e
         else:
             return result if result else None
-        # finally:
-        #     await session.close()
 
     @classmethod
     async def get_all(cls, session):
@@ -73,7 +71,7 @@ class Customer(Base, DBMixin):
         query = select(Customer).where(Customer.username == username)
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
-        return result
+        return True if result else False
 
 
 customer_wish_list = Table(

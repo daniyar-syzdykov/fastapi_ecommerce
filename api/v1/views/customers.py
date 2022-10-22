@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends, Form
-from database.models import Customer
+from fastapi import APIRouter, HTTPException, Depends
+from database.models import Customer, Product
 from pydantic import parse_obj_as
-from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema
+from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema
 from database.session import get_session
 from .auth import get_current_user
 
@@ -38,7 +38,7 @@ async def get_user_by_id(id: int, session=Depends(get_session)):
     except Exception as e:
         raise e
     else:
-        return {'success': True, 'data': customer.__dict__}
+        return {'success': True, 'data': customer}
 
 
 @customer_router.post('')
@@ -53,7 +53,7 @@ async def register_new_user(data: CustomerCreationSchema = Depends(CustomerCreat
         raise HTTPException(status_code=400, detail='Passwords does not match')
 
     try:
-        await Customer.create(session=session, username=data.username, password=data.password)
+        result = await Customer.create(session=session, username=data.username, password=data.password)
     except Exception as e:
         raise e
     else:
@@ -62,6 +62,8 @@ async def register_new_user(data: CustomerCreationSchema = Depends(CustomerCreat
 
 @customer_router.post('/cart')
 async def add_to_customers_cart(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
-    for i in data.products:
-        customer.cart.append(i)
-    return {'success': True} 
+    product = await Product.get_by_id(data.product_id, session)
+    customer.cart.append(product)
+    session.add(customer)
+    await session.commit()
+    return {'success': True, 'data': customer}

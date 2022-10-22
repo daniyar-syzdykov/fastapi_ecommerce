@@ -1,5 +1,6 @@
 import uuid
 from pydantic import BaseModel
+from sqlalchemy.orm.collections import InstrumentedList
 from . import BaseProductSchema, BaseCustomerSchema, BaseOrderSchema, as_form
 
 
@@ -7,10 +8,7 @@ class CustomerResultSchema(BaseCustomerSchema):
     uuid: str
     wish_list: list[BaseProductSchema]
     cart: list[BaseProductSchema]
-    orders: list[BaseOrderSchema]
-
-    class Config:
-        orm_mode = True
+    orders: InstrumentedList[BaseOrderSchema]
 
 
 @as_form
@@ -23,8 +21,6 @@ class CustomerCreationSchema(BaseModel):
 class CustomerAuthSchema(BaseCustomerSchema):
     uuid: str
 
-    class Config:
-        orm_mode = True
 
 class CartSchema(BaseModel):
-    products: list[int]
+    product_id: int

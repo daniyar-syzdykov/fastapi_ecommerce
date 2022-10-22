@@ -4,23 +4,6 @@ from fastapi import Form
 from pydantic import BaseModel
 
 
-class BaseCustomerSchema(BaseModel):
-    username: str
-
-
-class BaseProductSchema(BaseModel):
-    id: int
-    name: str
-    description: str | None
-    price: int | float
-
-
-class BaseOrderSchema(BaseModel):
-    id: int
-    created_at: str
-    products: list[BaseProductSchema]
-
-
 def as_form(cls: BaseModel):
     new_params = []
     for field_name, model_field in cls.__fields__.items():
@@ -42,3 +25,27 @@ def as_form(cls: BaseModel):
     as_form_func.__signature__ = sig
     setattr(cls, 'as_form', as_form_func)
     return cls
+
+
+class BaseScheme(BaseModel):
+    class Config:
+        orm_mode = True
+
+
+class BaseCustomerSchema(BaseScheme):
+    uuid: str
+    username: str
+
+
+class BaseProductSchema(BaseScheme):
+    id: int
+    name: str
+    description: str | None
+    price: int | float
+    uuid: str
+
+
+class BaseOrderSchema(BaseScheme):
+    id: int
+    created_at: str
+    # products: list[BaseProductSchema]

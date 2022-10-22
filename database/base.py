@@ -34,15 +34,6 @@ class DBMixin:
         result = await DBMixin._execute_query(query, session)
         result = [i[0] for i in result.all()]
         return result
-        # try:
-        #     result = await session.execute(query)
-        #     result = [i[0] for i in result.all()]
-        # except Exception as e:
-        #     raise e
-        # else:
-        #     return result
-        # finally:
-        #     await session.close()
 
     @classmethod
     async def update(cls, id, session, **kwargs):
@@ -51,59 +42,25 @@ class DBMixin:
             .execution_options(synchronize_session="fetch")
         )
         result = await DBMixin._execute_query(query, session)
-        result = [i[0] for i in result.all()]
+        result = result.one_or_none()
         return result
-        # try:
-        #     result = await session.execute(query)
-        #     result = [i[0] for i in result.all()]
-        # except Exception as e:
-        #     raise e
-        # else:
-        #     await session.commit()
-        # finally:
-        #     await session.close()
 
     @classmethod
     async def get_by_id(cls, id, session):
         query = select(cls).where(cls.id == id)
         result = await DBMixin._execute_query(query, session)
-        result = result.one_or_none()
-        return result
-        # try:
-        #     result = await session.execute(query)
-        #     result = result.one_or_none()
-        # except Exception as e:
-        #     raise e
-        # else:
-        #     return result[0] if result else None
-        # finally:
-        #     await session.close()
+        result = result.unique().one_or_none()
+        return result[0]
 
     @classmethod
     async def delete(cls, id, session):
         query = delete(cls).where(cls.id == id)
         result = await DBMixin._execute_query(query, session)
         return {'success': True}
-        # try:
-        #     await session.execute(query)
-        # except Exception as e:
-        #     raise e
-        # else:
-        #     return {'success': True}
-        # finally:
-        #     await session.close()
 
     @classmethod
     async def exists(cls, id, session):
         query = exists(cls).where(cls.id == id)
         result = await DBMixin._execute_query(query, session)
-        # try:
-        #     result = await session.execute(query)
-        # except Exception as e:
-        #     raise e
-        # else:
-        #     return result
-        # finally:
-        #     await session.close()
 
     __mapper_args__ = {"eager_defaults": True}

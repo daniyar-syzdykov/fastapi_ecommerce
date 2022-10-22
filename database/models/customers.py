@@ -16,7 +16,7 @@ class Customer(Base, DBMixin):
     _password = Column(String(), nullable=False)
     is_admin = Column(Boolean(), default=False)
     is_active = Column(Boolean(), default=True)
-    cart = relationship('Product', secondary='customer_cart')
+    cart = relationship('Product', secondary='customer_cart', back_populates='cart')
     wish_list = relationship(
         'Product', secondary='customer_wish_list', back_populates='wish_list')
     orders = relationship('Order', back_populates='customer')
@@ -32,15 +32,6 @@ class Customer(Base, DBMixin):
     @password.setter
     def password(self, raw_password):
         self._password = Hasher.hash_password(raw_password=raw_password)
-
-    @classmethod
-    async def _execute_query(cls, query, session):
-        try:
-            result = await session.execute(query)
-        except Exception as e:
-            raise e
-        else:
-            return result if result else None
 
     @classmethod
     async def get_all(cls, session):
@@ -72,6 +63,19 @@ class Customer(Base, DBMixin):
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
         return True if result else False
+
+    @classmethod
+    async def add_to_cart(cls, customer_id: int, product_id: int, session):
+        cls.cart.append(product_id)
+        session.add(cls)
+        try:
+            session.commit(cls)
+        except Exception as e:
+            raise e
+        else:
+            session.rollback()
+        finally:
+            session.close()
 
 
 customer_wish_list = Table(

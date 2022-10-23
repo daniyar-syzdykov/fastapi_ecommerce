@@ -6,17 +6,16 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from string import ascii_lowercase, digits
-from .session import get_test_session, create_tables
+from .session import get_test_session
 from database.session import get_session
 from api.v1.views import main_router
-# from server import app
 
+INIT = False
 
 class Env:
     def __init__(self, client, app) -> None:
         self.app: FastAPI = app
         self.client: TestClient = client
-        # self.session = session
 
 
 @pytest.fixture(scope="session")
@@ -57,7 +56,7 @@ def random_user() -> tuple[str, str]:
 def random_product() -> tuple[str, str, float]:
     name = ''
     description = ''
-    price = random.uniform(1000, 10000)
+    price = random.randrange(1000, 10000)
     n = random.randrange(10, 15)
     for _ in range(n):
         name += random.choice(ascii_lowercase + digits)

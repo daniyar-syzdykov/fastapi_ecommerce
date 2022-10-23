@@ -63,7 +63,15 @@ async def register_new_user(data: CustomerCreationSchema = Depends(CustomerCreat
 @customer_router.post('/cart')
 async def add_to_customers_cart(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
     product = await Product.get_by_id(data.product_id, session)
+
+    if not product:
+        raise HTTPException(status_code=400, detail='This product does not exists')
+
     customer.cart.append(product)
     session.add(customer)
-    await session.commit()
-    return {'success': True, 'data': customer}
+
+    try:
+        await session.commit()
+    except Exception as e:
+        raise e
+    return {'success': True}

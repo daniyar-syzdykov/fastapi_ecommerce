@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from database.models import Customer
-from database.schemas import CustomerAuthSchema, BaseCustomerSchema, CustomerResultSchema
+from database.schemas import CustomerAuthSchema, BaseCustomerSchema, CustomerResultSchema, CustomerCreationSchema
 from database.session import get_session
 from security.hasher import Hasher
 from security.jwt import JWT
@@ -30,6 +30,29 @@ async def get_current_user(token=Depends(oauth2_scheme), session=Depends(get_ses
     return user_from_db
 
 
+async def change_password(token: str, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+    pass
+
+
+@auth_router.post('', status_code=201)
+async def register_new_user(data: CustomerCreationSchema = Depends(CustomerCreationSchema.as_form), session=Depends(get_session)):
+    customer = await Customer.exists(data.username, session=session)
+
+    if customer:
+        raise HTTPException(
+            status_code=400, detail=f'User with username "{data.username}" already exists')
+
+    if data.password != data.password_2:
+        raise HTTPException(status_code=400, detail='Passwords does not match')
+
+    try:
+        result = await Customer.create(session=session, username=data.username, password=data.password)
+    except Exception as e:
+        raise e
+    else:
+        return {'success': True}
+
+
 @auth_router.post('/token')
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session=Depends(get_session)):
     user_from_db: Customer = await Customer.get_by_username(form_data.username, session)
@@ -45,6 +68,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session=Depend
     access_token = JWT.gen_new_access_token(user.dict())
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@auth_router.post('')
+async def forgot_password(username: str = Form(), session=Depends(get_session)):
+    customer: Customer = Customer.get_by_username(username, session)
+    if not Customer:
+        raise HTTPException(status_code=400, detail='This customer does not exists')
+    
+    # password reset URL = generate_password_reset_url()
+    # send_email_to_user(customer.email)
+    return {'success': True}
 
 
 @auth_router.get('/me')

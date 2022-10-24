@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from database.models import Product
-from database.schemas import ProductCreationSchema, ProductResultSchema
+from database.models import Product, Customer
+from database.schemas import ProductUpdateSchema, ProductResultSchema, ProductCreationSchema
 from database.session import get_session
+from .auth import get_current_user
 
 
 product_router = APIRouter(
@@ -36,10 +37,37 @@ async def get_product_by_id(id: int, session=Depends(get_session)):
 
 
 @product_router.post('')
-async def create_new_produt(data: ProductCreationSchema = Depends(ProductCreationSchema.as_form), session=Depends(get_session)):
+async def create_new_produt(user: Customer = Depends(get_current_user), data: ProductCreationSchema = Depends(ProductCreationSchema.as_form), session=Depends(get_session)):
+    if not user.is_admin:
+        raise HTTPException(status_code=401, detail='You have no permission')
+
     try:
         await Product.create(**data.dict(), session=session)
     except Exception as e:
         raise e
     else:
         return {'success': True}
+
+
+@product_router.patch('/{id}')
+async def update_product(id: int, user: Customer = Depends(get_current_user), data: ProductUpdateSchema = Depends(ProductUpdateSchema.as_form), session=Depends(get_session)):
+    if not user.is_admin:
+        raise HTTPException(status_code=401, detail='You have no permission')
+
+    try:
+        await Product.update(id=id, session=session, **data.dict())
+    except Exception as e:
+        raise e
+    return {'success': True}
+
+
+@product_router.delete('/{id}')
+async def delete_product(id: int, user: Customer = Depends(get_current_user), session=Depends(get_session)):
+    if not user.is_admin:
+        raise HTTPException(status_code=401, detail='You have no permission')
+
+    try:
+        await Product.delete(id, session)
+    except Exception as e:
+        raise e
+    return {'success': True}

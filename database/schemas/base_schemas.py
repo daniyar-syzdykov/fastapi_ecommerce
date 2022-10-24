@@ -26,17 +26,16 @@ def as_form(cls: BaseModel):
     return cls
 
 
-class BaseScheme(BaseModel):
+class BaseSchema(BaseModel):
     class Config:
         orm_mode = True
 
 
-class BaseCustomerSchema(BaseScheme):
-    uuid: str
+class BaseCustomerSchema(BaseSchema):
     username: str
 
 
-class BaseProductSchema(BaseScheme):
+class BaseProductSchema(BaseSchema):
     id: int
     name: str
     description: str | None
@@ -44,6 +43,6 @@ class BaseProductSchema(BaseScheme):
     uuid: str
 
 
-class BaseOrderSchema(BaseScheme):
+class BaseOrderSchema(BaseSchema):
     id: int
     created_at: str

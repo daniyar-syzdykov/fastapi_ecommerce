@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database.models import Customer, Product
 from pydantic import parse_obj_as
-from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema
+from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema, CustomerUpdateSchema
 from database.session import get_session
 from .auth import get_current_user
 
@@ -12,7 +12,11 @@ customer_router = APIRouter(
 
 
 @customer_router.get('')
-async def get_all_users(session=Depends(get_session)):
+async def get_all_users(customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+    if not customer.is_admin:
+        raise HTTPException(
+            status_code=401, detail='You have no permission to view this page')
+
     try:
         db_customers = await Customer.get_all(session=session)
 
@@ -27,7 +31,11 @@ async def get_all_users(session=Depends(get_session)):
 
 
 @customer_router.get('/{id}')
-async def get_user_by_id(id: int, session=Depends(get_session)):
+async def get_user_by_id(id: int, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+    if not customer.is_admin:
+        raise HTTPException(
+            status_code=401, detail='You have no permission to view this page')
+
     try:
         db_customer = await Customer.get_by_id(id, session=session)
 
@@ -41,23 +49,17 @@ async def get_user_by_id(id: int, session=Depends(get_session)):
         return {'success': True, 'data': customer}
 
 
-@customer_router.post('')
-async def register_new_user(data: CustomerCreationSchema = Depends(CustomerCreationSchema.as_form), session=Depends(get_session)):
-    customer = await Customer.exists(data.username, session=session)
-
-    if customer:
-        raise HTTPException(
-            status_code=400, detail=f'User with username "{data.username}" already exists')
-
-    if data.password != data.password_2:
-        raise HTTPException(status_code=400, detail='Passwords does not match')
+@customer_router.patch('/{id}')
+async def update_customer_profile(id: int, data: CustomerUpdateSchema = Depends(CustomerUpdateSchema.as_form), customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+    customer_from_db: Customer = Customer.get_by_id(id, session)
+    if customer.uuid != customer_from_db.uuid:
+        raise HTTPException(status_code=401, detail='You have no persmission')
 
     try:
-        result = await Customer.create(session=session, username=data.username, password=data.password)
+        await Customer.update(id=id, session=session, **data.dict())
     except Exception as e:
         raise e
-    else:
-        return {'success': True}
+    return {'success': True}
 
 
 @customer_router.post('/cart')
@@ -65,7 +67,8 @@ async def add_to_customers_cart(data: CartSchema, customer: Customer = Depends(g
     product = await Product.get_by_id(data.product_id, session)
 
     if not product:
-        raise HTTPException(status_code=400, detail='This product does not exists')
+        raise HTTPException(
+            status_code=400, detail='This product does not exists')
 
     customer.cart.append(product)
     session.add(customer)

@@ -7,11 +7,6 @@ app = FastAPI()
 app.include_router(main_router)
 
 
-@app.get('/')
-async def main():
-    return {'hi': 'there'}
-
-
 @app.on_event('startup')
 async def start():
     await create_tables()

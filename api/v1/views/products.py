@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from database.models import Product, Customer
-from database.schemas import ProductUpdateSchema, ProductResultSchema, ProductCreationSchema
+from database.schemas import ProductUpdateSchema, ProductResultSchema, ProductCreationSchema, ProductQuerySchema
 from database.session import get_session
 from .auth import get_current_user
 
@@ -10,14 +10,15 @@ product_router = APIRouter(
 )
 
 
-@product_router.get('')
-async def get_all_products(session=Depends(get_session)):
+@product_router.get('/')
+async def get_all_products(query: ProductQuerySchema = Depends(), session=Depends(get_session)):
     try:
-        products = await Product.get_all(session=session)
+        products = await Product.get_all(session=session, per_page=query.page_size, page=query.page, rate=query.rate, order=query.order)
     except Exception as e:
         raise e
     else:
         return {'success': True, 'data': products}
+    # return {'size': query.page_size, 'page': query.page}
 
 
 @product_router.get('/{id}')

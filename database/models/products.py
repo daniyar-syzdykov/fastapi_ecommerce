@@ -4,6 +4,12 @@ from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.dialects.postgresql import UUID
 from ..base import DBMixin
 from .. import Base
+from typing import NamedTuple
+
+
+class Page(NamedTuple):
+    from_: int
+    to: int
 
 
 class Product(Base, DBMixin):
@@ -30,3 +36,27 @@ class Product(Base, DBMixin):
         result = await Product._execute_query(query, session)
         result = result.unique().one_or_none()
         return result[0] if result else None
+
+    @staticmethod
+    def _get_sort_func(rate, order):
+        order_by = getattr(Product, order)
+        sort_func = getattr(order_by, rate)
+        return sort_func
+
+    @staticmethod
+    def _pagination(per_page,  page) -> Page:
+        from_ = per_page * page - per_page
+        to = per_page * page
+        return Page(from_, to)
+
+    @classmethod
+    async def get_all(cls, session, per_page, page, rate, order):
+        func = Product._get_sort_func(rate, order)
+
+        query = select(Product).order_by(func())
+        result = await Product._execute_query(query, session)
+        result = result.all()
+
+        page = Product._pagination(per_page, page)
+
+        return result[page.from_:page.to]

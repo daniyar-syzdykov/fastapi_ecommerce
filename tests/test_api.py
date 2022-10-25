@@ -14,8 +14,8 @@ async def test_creating_new_user(test_env: Env, random_user: tuple[str, str]):
 
     CACHE.update({'user': new_user})
 
-    response: Response = await test_env.client.post('/api/v1/customers', data=new_user)
-    assert response.status_code == 200
+    response: Response = await test_env.client.post('/api/v1/auth', data=new_user)
+    assert response.status_code == 201
     assert response.json() == {'success': True}
 
 

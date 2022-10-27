@@ -76,9 +76,15 @@ async def forgot_password(username: str = Form(), session=Depends(get_session)):
     if not Customer:
         raise HTTPException(status_code=400, detail='This customer does not exists')
     
-    # password reset URL = generate_password_reset_url()
-    # send_email_to_user(customer.email)
+    # 'site.com/auth/reset' + password_reset_url = generate_password_reset_token()
+    # send_email_to_user(customer.email, password_reset_url)
     return {'success': True}
+
+
+
+@auth_router.post('/reset/token')
+async def reset_password():
+    pass
 
 
 @auth_router.get('/me')

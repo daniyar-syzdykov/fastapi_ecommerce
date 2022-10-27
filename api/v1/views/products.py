@@ -38,7 +38,7 @@ async def get_product_by_id(id: int, session=Depends(get_session)):
 
 
 @product_router.post('')
-async def create_new_produt(user: Customer = Depends(get_current_user), data: ProductCreationSchema = Depends(ProductCreationSchema.as_form), session=Depends(get_session)):
+async def create_new_product(user: Customer = Depends(get_current_user), data: ProductCreationSchema = Depends(ProductCreationSchema.as_form), session=Depends(get_session)):
     if not user.is_admin:
         raise HTTPException(status_code=401, detail='You have no permission')
 

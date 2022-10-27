@@ -4,6 +4,7 @@ from . import BaseProductSchema, BaseCustomerSchema, BaseOrderSchema, BaseSchema
 
 
 class CustomerResultSchema(BaseCustomerSchema):
+    username: str
     uuid: str
     wish_list: list[BaseProductSchema]
     cart: list[BaseProductSchema]
@@ -11,20 +12,21 @@ class CustomerResultSchema(BaseCustomerSchema):
 
 
 @as_form
-class CustomerCreationSchema(BaseModel):
+class CustomerCreationSchema(BaseSchema):
     username: str
     password: str
     password_2: str
 
 
 class CustomerAuthSchema(BaseCustomerSchema):
-    pass
+    username: str
 
 
 @as_form
 class CustomerUpdateSchema(BaseCustomerSchema):
-    pass
+    username: str | None
+    is_active: bool | None
 
 
-class CartSchema(BaseModel):
+class CartSchema(BaseSchema):
     product_id: int

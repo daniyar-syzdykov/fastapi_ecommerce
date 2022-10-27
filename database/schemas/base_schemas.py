@@ -32,7 +32,7 @@ class BaseSchema(BaseModel):
 
 
 class BaseCustomerSchema(BaseSchema):
-    username: str
+    pass
 
 
 class BaseProductSchema(BaseSchema):

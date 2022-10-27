@@ -16,7 +16,8 @@ class Customer(Base, DBMixin):
     _password = Column(String(), nullable=False)
     is_admin = Column(Boolean(), default=False)
     is_active = Column(Boolean(), default=True)
-    cart = relationship('Product', secondary='customer_cart', back_populates='cart')
+    cart = relationship('Product', secondary='customer_cart',
+                        back_populates='cart')
     wish_list = relationship(
         'Product', secondary='customer_wish_list', back_populates='wish_list')
     orders = relationship('Order', back_populates='customer')

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database.models import Customer, Product
 from pydantic import parse_obj_as
-from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema, CustomerUpdateSchema
+from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema, CustomerUpdateSchema, CustomerAuthSchema
 from database.session import get_session
-from .auth import get_current_user
+from .auth import get_current_user, JWT
 
 
 customer_router = APIRouter(
@@ -51,15 +51,20 @@ async def get_user_by_id(id: int, customer: Customer = Depends(get_current_user)
 
 @customer_router.patch('/{id}')
 async def update_customer_profile(id: int, data: CustomerUpdateSchema = Depends(CustomerUpdateSchema.as_form), customer: Customer = Depends(get_current_user), session=Depends(get_session)):
-    customer_from_db: Customer = Customer.get_by_id(id, session)
-    if customer.uuid != customer_from_db.uuid:
-        raise HTTPException(status_code=401, detail='You have no persmission')
-
     try:
         await Customer.update(id=id, session=session, **data.dict())
     except Exception as e:
         raise e
-    return {'success': True}
+
+    auth_customer = CustomerAuthSchema.from_orm(customer)
+    access_token = JWT.gen_new_access_token(auth_customer.dict())
+
+    return {'success': True, 'access_token': access_token, 'token_type': 'bearer'}
+
+
+
+async def add_to_customer_model_field(data, cutomer: Customer, session):
+    pass
 
 
 @customer_router.post('/cart')
@@ -71,6 +76,24 @@ async def add_to_customers_cart(data: CartSchema, customer: Customer = Depends(g
             status_code=400, detail='This product does not exists')
 
     customer.cart.append(product)
+    session.add(customer)
+
+    try:
+        await session.commit()
+    except Exception as e:
+        raise e
+    return {'success': True}
+
+
+@customer_router.post('/wishlist')
+async def add_to_customers_wish_list(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+    product = await Product.get_by_id(data.product_id, session)
+
+    if not product:
+        raise HTTPException(
+            status_code=400, detail='This product does not exists')
+
+    customer.wish_list.append(product)
     session.add(customer)
 
     try:

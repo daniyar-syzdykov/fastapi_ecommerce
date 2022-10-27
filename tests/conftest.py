@@ -12,6 +12,7 @@ from api.v1.views import main_router
 
 INIT = False
 
+
 class Env:
     def __init__(self, client, app) -> None:
         self.app: FastAPI = app

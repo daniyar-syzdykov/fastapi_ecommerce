@@ -4,6 +4,7 @@ from . import BaseProductSchema, BaseCustomerSchema, BaseOrderSchema, BaseSchema
 
 
 class CustomerResultSchema(BaseCustomerSchema):
+    name: str | None
     username: str
     uuid: str
     wish_list: list[BaseProductSchema]
@@ -24,6 +25,7 @@ class CustomerAuthSchema(BaseCustomerSchema):
 
 @as_form
 class CustomerUpdateSchema(BaseCustomerSchema):
+    name: str | None
     username: str | None
     is_active: bool | None
 

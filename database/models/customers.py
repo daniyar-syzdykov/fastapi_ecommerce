@@ -10,12 +10,13 @@ from security.hasher import Hasher
 class Customer(Base, DBMixin):
     __tablename__ = 'customers'
 
-    id = Column(Integer(), primary_key=True)
-    _uuid = Column(UUID(as_uuid=True), default=uuid.uuid4)
+    id = Column(Integer(), primary_key=True, nullable=False)
+    _uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False)
+    name = Column(String(255))
     username = Column(String(255), unique=True, nullable=False)
     _password = Column(String(), nullable=False)
-    is_admin = Column(Boolean(), default=False)
-    is_active = Column(Boolean(), default=True)
+    is_admin = Column(Boolean(), default=False, nullable=False)
+    is_active = Column(Boolean(), default=True, nullable=False)
     cart = relationship('Product', secondary='customer_cart',
                         back_populates='cart')
     wish_list = relationship(
@@ -83,14 +84,14 @@ customer_wish_list = Table(
     'customer_wish_list',
     Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('customer_id', Integer, ForeignKey('customers.id')),
-    Column('product_id', Integer, ForeignKey('products.id'))
+    Column('customer_id', Integer, ForeignKey('customers.id', ondelete='CASCADE')),
+    Column('product_id', Integer, ForeignKey('products.id', ondelete='CASCADE'))
 )
 
 customer_cart = Table(
     'customer_cart',
     Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('customer_id', ForeignKey('customers.id')),
-    Column('product_id', ForeignKey('products.id'))
+    Column('customer_id', ForeignKey('customers.id', ondelete='CASCADE')),
+    Column('product_id', ForeignKey('products.id', ondelete='CASCADE'))
 )

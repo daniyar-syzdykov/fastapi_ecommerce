@@ -5,7 +5,6 @@ from sqlalchemy import select, update, delete, exists
 class DBMixin:
     @classmethod
     async def _execute_query(cls, query, session):
-        print('-----------------> ', query)
         try:
             result = await session.execute(query)
         except Exception as e:
@@ -47,8 +46,12 @@ class DBMixin:
             cls._update_row_values(obj, **kwargs)
             session.add(obj)
             await session.commit()
+            await session.refresh(obj)
+            await session.close() # you have to manually close session otherwise test will throw RuntimeError (cause unknown)
         except Exception as e:
             raise e
+        else:
+            return obj
 
     @classmethod
     async def get_by_id(cls, id, session):
@@ -59,9 +62,12 @@ class DBMixin:
 
     @classmethod
     async def delete(cls, id, session):
-        query = delete(cls).where(cls.id == id)
-        result = await cls._execute_query(query, session)
-        return {'success': True}
+        try:
+            obj = await cls.get_by_id(id, session)
+            await session.delete(obj)
+            await session.commit()
+        except Exception as e:
+            raise e
 
     @classmethod
     async def exists(cls, id, session):

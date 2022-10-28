@@ -33,7 +33,6 @@ async def test_creating_new_user(test_env: Env, random_user: tuple[str, str]):
     assert user_is_admin == True
 
 
-
 @pytest.mark.asyncio()
 async def test_authenticate_user(test_env: Env):
     user: dict = CACHE.get('user')
@@ -41,7 +40,6 @@ async def test_authenticate_user(test_env: Env):
     response_json: dict = response.json()
 
     assert response.status_code == 200
-    assert response_json.get('access_token')
     assert response_json.get('token_type') == 'bearer'
 
     CACHE.update(response_json)
@@ -59,8 +57,7 @@ async def test_creating_new_product(test_env: Env, random_product: tuple[str, st
     headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
 
     response: Response = await test_env.client.post('/api/v1/products', data=new_product, headers=headers)
-    print(response.json())
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json() == {'success': True}
 
 
@@ -83,7 +80,7 @@ async def test_get_all_users(test_env: Env):
     user: dict = CACHE.get('user')
 
     assert response.status_code == 200
-    response_json.get('data')[0].get('username') == user.get('username')
+    assert response_json.get('data')[0].get('username') == user.get('username')
 
 
 @pytest.mark.asyncio()
@@ -131,3 +128,33 @@ async def test_get_product_by_id(test_env: Env):
     assert response.status_code == 200
     assert response_json.get('name') == product.get('name')
     assert response_json.get('price') == product.get('price')
+
+
+@pytest.mark.asyncio()
+async def test_update_customer_profile(test_env: Env, random_user: tuple[str, str]):
+    headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
+    new_username = {'username': random_user[0]}
+    response: Response = await test_env.client.patch('/api/v1/customers/1', headers=headers, data=new_username)
+    response_json: dict = response.json()
+
+    assert response.status_code == 200
+    assert response_json.get('success') == True
+    assert response_json.get('token_type') == 'bearer'
+
+    CACHE.update({'access_token': response_json.get('access_token')})
+
+
+@pytest.mark.asyncio()
+async def test_delete_product(test_env: Env):
+    headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
+    response: Response = await test_env.client.delete('/api/v1/products/1', headers=headers)
+    customer: Response = await test_env.client.get('/api/v1/customers/1', headers=headers)
+    customer_json: dict = customer.json()
+    response_json: dict = response.json()
+
+    print('----------------------------')
+    print(CACHE)
+
+    assert response.status_code == 200
+    assert response_json == {'success': True}
+    assert customer_json.get('cart') is None

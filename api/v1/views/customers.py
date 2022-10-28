@@ -54,6 +54,7 @@ async def get_user_by_id(id: int, customer: Customer = Depends(get_current_user)
 async def update_customer_profile(id: int, data: CustomerUpdateSchema = Depends(CustomerUpdateSchema.as_form), customer: Customer = Depends(get_current_user), session=Depends(get_session)):
     try:
         updated_customer = await Customer.update(id=id, session=session, **data.dict())
+        print('---------------------------> ', updated_customer.__dict__)
     except Exception as e:
         raise e
 
@@ -61,6 +62,7 @@ async def update_customer_profile(id: int, data: CustomerUpdateSchema = Depends(
     access_token = JWT.gen_new_access_token(auth_customer.dict())
 
     return {'success': True, 'access_token': access_token, 'token_type': 'bearer'}
+    # return {'success': True, 'data': updated_customer}
 
 
 async def add_to_customer_model_field(data, cutomer: Customer, session):

@@ -31,8 +31,7 @@ class Product(Base, DBMixin):
 
     @classmethod
     async def get_by_id(cls, id, session):
-        query = select(Product).where(Product.id == id).options(
-            joinedload(Product.cart), joinedload(Product.wish_list))
+        query = select(Product).where(Product.id == id)
         result = await Product._execute_query(query, session)
         result = result.unique().one_or_none()
         return result[0] if result else None
@@ -51,9 +50,9 @@ class Product(Base, DBMixin):
 
     @classmethod
     async def get_all(cls, session, per_page, page, rate, order):
-        func = Product._get_sort_func(rate, order)
+        sort_func = Product._get_sort_func(rate, order)
 
-        query = select(Product).order_by(func())
+        query = select(Product).order_by(sort_func())
         result = await Product._execute_query(query, session)
         result = result.all()
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship, joinedload
 from ..base import DBMixin
 from .. import Base
 from security.hasher import Hasher
+import inspect
 
 
 class Customer(Base, DBMixin):
@@ -19,8 +20,8 @@ class Customer(Base, DBMixin):
     is_active = Column(Boolean(), default=True, nullable=False)
     cart = relationship('Product', secondary='customer_cart',
                         back_populates='cart')
-    wish_list = relationship(
-        'Product', secondary='customer_wish_list', back_populates='wish_list')
+    wish_list = relationship('Product', secondary='customer_wish_list',
+                             back_populates='wish_list')
     orders = relationship('Order', back_populates='customer')
 
     @property
@@ -67,25 +68,50 @@ class Customer(Base, DBMixin):
         return True if result else False
 
     @classmethod
-    async def add_to_cart(cls, customer_id: int, product_id: int, session):
-        cls.cart.append(product_id)
-        session.add(cls)
+    async def get_customer_with_cart(cls, username, session):
+        query = select(Customer).where(Customer.username ==
+                                       username).options(joinedload(Customer.cart))
+        result = await Customer._execute_query(query, session)
+        result = result.unique().one_or_none()
+        return result[0] if result else None
+
+    @classmethod
+    async def get_customer_with_wish_list(cls, username, session):
+        query = select(Customer).where(Customer.username ==
+                                       username).options(joinedload(Customer.wish_list))
+        result = await Customer._execute_query(query, session)
+        result = result.unique().one_or_none()
+        return result[0] if result else None
+
+    async def add_to_cart(self, product, session):
+        self.cart.append(product)
+        session.add(self)
         try:
-            session.commit(cls)
+            await session.commit()
         except Exception as e:
+            session.rollback()
             raise e
         else:
+            return {'success': True}
+
+    async def add_to_wish_list(self, product, session):
+        self.wish_list.append(product)
+        session.add(self)
+        try:
+            await session.commit()
+        except Exception as e:
             session.rollback()
-        finally:
-            session.close()
+            raise e
+        else:
+            return {'success': True}
 
 
 customer_wish_list = Table(
     'customer_wish_list',
     Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('customer_id', Integer, ForeignKey('customers.id', ondelete='CASCADE')),
-    Column('product_id', Integer, ForeignKey('products.id', ondelete='CASCADE'))
+    Column('customer_id', ForeignKey('customers.id', ondelete='CASCADE')),
+    Column('product_id', ForeignKey('products.id', ondelete='CASCADE'))
 )
 
 customer_cart = Table(

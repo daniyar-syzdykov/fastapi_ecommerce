@@ -15,9 +15,13 @@ auth_router = APIRouter(
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/token')
 
 
-async def get_current_user(token=Depends(oauth2_scheme), session=Depends(get_session)) -> Customer:
+async def get_decoded_token(token=Depends(oauth2_scheme)):
     decoded_token = JWT.decode_token(token)
-    username = decoded_token.get('username')
+    return decoded_token
+
+
+async def get_current_user(token=Depends(get_decoded_token), session=Depends(get_session)) -> Customer:
+    username = token.get('username')
     user_from_db: Customer = await Customer.get_by_username(username, session)
 
     if not user_from_db:
@@ -74,12 +78,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session=Depend
 async def forgot_password(username: str = Form(), session=Depends(get_session)):
     customer: Customer = Customer.get_by_username(username, session)
     if not Customer:
-        raise HTTPException(status_code=400, detail='This customer does not exists')
-    
+        raise HTTPException(
+            status_code=400, detail='This customer does not exists')
+
     # 'site.com/auth/reset' + password_reset_url = generate_password_reset_token()
     # send_email_to_user(customer.email, password_reset_url)
     return {'success': True}
-
 
 
 @auth_router.post('/reset/token')

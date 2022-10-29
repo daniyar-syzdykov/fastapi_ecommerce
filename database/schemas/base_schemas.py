@@ -10,7 +10,7 @@ def as_form(cls: BaseModel):
             inspect.Parameter(
                 field_name,
                 inspect.Parameter.POSITIONAL_ONLY,
-                default=Form(...) if model_field.required else Form(
+                default=Form() if model_field.required else Form(
                     model_field.default),
                 annotation=model_field.outer_type_
             )
@@ -32,7 +32,7 @@ class BaseSchema(BaseModel):
 
 
 class BaseCustomerSchema(BaseSchema):
-    pass
+    username: str
 
 
 class BaseProductSchema(BaseSchema):

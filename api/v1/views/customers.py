@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database.models import Customer, Product
+from database.models.customers import customer_cart, customer_wish_list
 from pydantic import parse_obj_as
 from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema, CustomerUpdateSchema, CustomerAuthSchema
 from database.session import get_session
-from .auth import get_current_user, JWT
+from .auth import get_current_user, get_decoded_token, JWT
 
 
 customer_router = APIRouter(
@@ -12,7 +13,7 @@ customer_router = APIRouter(
 
 
 @customer_router.get('')
-async def get_all_users(customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+async def get_all_customers(customer: Customer = Depends(get_current_user), session=Depends(get_session)):
     if not customer.is_admin:
         raise HTTPException(
             status_code=401, detail='You have no permission to view this page')
@@ -31,7 +32,7 @@ async def get_all_users(customer: Customer = Depends(get_current_user), session=
 
 
 @customer_router.get('/{id}')
-async def get_user_by_id(id: int, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+async def get_customer_by_id(id: int, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
     if not customer.is_admin:
         raise HTTPException(
             status_code=401, detail='You have no permission to view this page')
@@ -61,41 +62,30 @@ async def update_customer_profile(id: int, data: CustomerUpdateSchema = Depends(
     return {'success': True, 'access_token': access_token, 'token_type': 'bearer'}
 
 
-async def add_to_customer_model_field(data, cutomer: Customer, session):
-    pass
-
-
 @customer_router.post('/cart')
-async def add_to_customers_cart(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
-    product = await Product.get_by_id(data.product_id, session)
+async def add_to_customers_cart(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
+    customer: Customer = await Customer.get_customer_with_cart(
+        token.get('username'), session)
+    product: Product = await Product.get_by_id(data.product_id, session)
 
-    if not product:
-        raise HTTPException(
-            status_code=400, detail='This product does not exists')
-
-    customer.cart.append(product)
-    session.add(customer)
-
-    try:
-        await session.commit()
-    except Exception as e:
-        raise e
+    ret = await customer.add_to_cart(product, session=session)
     return {'success': True}
 
 
 @customer_router.post('/wishlist')
-async def add_to_customers_wish_list(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+async def add_to_customers_wish_list(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
+    customer: Customer = await Customer.get_customer_with_wish_list(
+        token.get('username'), session)
+    product: Product = await Product.get_by_id(data.product_id, session)
+
+    ret = await customer.add_to_wish_list(product, session=session)
+    return ret
+
+
+@customer_router.delete('/cart')
+async def remove_from_customer_cart(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
     product = await Product.get_by_id(data.product_id, session)
 
     if not product:
         raise HTTPException(
             status_code=400, detail='This product does not exists')
-
-    customer.wish_list.append(product)
-    session.add(customer)
-
-    try:
-        await session.commit()
-    except Exception as e:
-        raise e
-    return {'success': True}

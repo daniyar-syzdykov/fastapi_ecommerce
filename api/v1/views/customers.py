@@ -78,14 +78,23 @@ async def add_to_customers_wish_list(data: CartSchema, token: Customer = Depends
         token.get('username'), session)
     product: Product = await Product.get_by_id(data.product_id, session)
 
+    if not product:
+        raise HTTPException(
+            status_code=400, detail='This product does not exists')
+
     ret = await customer.add_to_wish_list(product, session=session)
     return ret
 
 
 @customer_router.delete('/cart')
-async def remove_from_customer_cart(data: CartSchema, customer: Customer = Depends(get_current_user), session=Depends(get_session)):
-    product = await Product.get_by_id(data.product_id, session)
+async def remove_from_customer_cart(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
+    customer: Customer = await Customer.get_customer_with_cart(
+        token.get('username'), session)
+    product: Product = await Product.get_by_id(data.product_id, session)
 
     if not product:
         raise HTTPException(
             status_code=400, detail='This product does not exists')
+
+    ret = await customer.remove_from_cart(product, session)
+    return ret

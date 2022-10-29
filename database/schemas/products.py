@@ -15,8 +15,7 @@ class Order(str, Enum):
 
 
 class ProductResultSchema(BaseProductSchema):
-    wish_list: list[BaseCustomerSchema]
-    cart: list[BaseCustomerSchema]
+    pass
 
 
 @as_form

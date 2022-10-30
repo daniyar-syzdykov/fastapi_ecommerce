@@ -73,6 +73,17 @@ async def test_add_to_customer_cart(test_env: Env):
 
 
 @pytest.mark.asyncio()
+async def test_add_to_customer_wish_list(test_env: Env):
+    data = {'product_id': 1}
+    headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
+    response: Response = await test_env.client.post('/api/v1/customers/wishlist', json=data, headers=headers)
+    response_json: dict = response.json()
+
+    assert response.status_code == 200
+    assert response_json == {'success': True}
+
+
+@pytest.mark.asyncio()
 async def test_get_all_users(test_env: Env):
     headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
     response: Response = await test_env.client.get('/api/v1/customers', headers=headers)
@@ -89,12 +100,14 @@ async def test_get_user_by_id(test_env: Env):
     response: Response = await test_env.client.get('/api/v1/customers/1', headers=headers)
     response_json: dict = response.json().get('data')
     user_cart: dict = response_json.get('cart')[0]
+    user_wish_list: dict = response_json.get('wish_list')[0]
     user: dict = CACHE.get('user')
     product: dict = CACHE.get('product')
 
     assert response.status_code == 200
     assert response_json.get('username') == user.get('username')
     assert user_cart.get('name') == product.get('name')
+    assert user_wish_list.get('name') == product.get('name')
 
 
 @pytest.mark.asyncio()
@@ -113,10 +126,8 @@ async def test_validate_user_tokne(test_env: Env):
 async def test_get_all_products(test_env: Env):
     response: Response = await test_env.client.get('/api/v1/products/')
     response_json: dict = response.json().get('data')
-    product: dict = CACHE.get('product')
 
     assert response.status_code == 200
-    assert len(response_json) > 0
 
 
 @pytest.mark.asyncio()
@@ -145,15 +156,32 @@ async def test_update_customer_profile(test_env: Env, random_user: tuple[str, st
 
 
 @pytest.mark.asyncio()
+async def test_remove_from_cutomer_cart(test_env: Env):
+    headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
+    response: Response = await test_env.client.delete('/api/v1/customers/cart/1', headers=headers)
+    response_json: dict = response.json()
+
+    assert response.status_code == 200
+    assert response_json == {'success': True}
+
+
+@pytest.mark.asyncio()
+async def test_remove_from_cutomer_wish_list(test_env: Env):
+    headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
+    response: Response = await test_env.client.delete('/api/v1/customers/wishlist/1', headers=headers)
+    response_json: dict = response.json()
+
+    assert response.status_code == 200
+    assert response_json == {'success': True}
+
+
+@pytest.mark.asyncio()
 async def test_delete_product(test_env: Env):
     headers = {'Authorization': f'Bearer {CACHE.get("access_token")}'}
     response: Response = await test_env.client.delete('/api/v1/products/1', headers=headers)
     customer: Response = await test_env.client.get('/api/v1/customers/1', headers=headers)
     customer_json: dict = customer.json()
     response_json: dict = response.json()
-
-    print('----------------------------')
-    print(CACHE)
 
     assert response.status_code == 200
     assert response_json == {'success': True}

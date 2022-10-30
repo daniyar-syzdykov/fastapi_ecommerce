@@ -32,14 +32,14 @@ async def add_to_customer_field(data, username, field_name, session):
     return {'success': True}
 
 
-async def remove_from_customer_field(data: CartSchema, username: str, field_name, session):
+async def remove_from_customer_field(product_id: int, username: str, field_name, session):
     get_field_func = getattr(Customer, f'get_customer_with_{field_name}')
     customer: Customer = await get_field_func(username, session)
     field = getattr(customer, field_name)
     customer_remove_function = getattr(customer, f'remove_from_{field_name}')
 
     for product in field:
-        if product.id == data.product_id:
+        if product.id == product_id:
             ret = await customer_remove_function(product, session)
             return ret
     return {'success': False}
@@ -109,11 +109,11 @@ async def add_to_customers_wish_list(data: CartSchema, token: Customer = Depends
     return await add_to_customer_field(data, token.get('username'), 'wish_list', session)
 
 
-@customer_router.delete('/cart')
-async def remove_from_customer_cart(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
-    return await remove_from_customer_field(data, token.get('username'), 'cart', session)
+@customer_router.delete('/cart/{product_id}')
+async def remove_from_customer_cart(product_id: int, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
+    return await remove_from_customer_field(product_id, token.get('username'), 'cart', session)
 
 
-@customer_router.delete('/wishlist')
-async def remove_from_customer_wish_list(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
-    return await remove_from_customer_field(data, token.get('username'), 'wish_list', session)
+@customer_router.delete('/wishlist/{product_id}')
+async def remove_from_customer_wish_list(product_id: int, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
+    return await remove_from_customer_field(product_id, token.get('username'), 'wish_list', session)

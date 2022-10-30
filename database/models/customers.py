@@ -83,6 +83,14 @@ class Customer(Base, DBMixin):
         result = result.unique().one_or_none()
         return result[0] if result else None
 
+    @classmethod
+    async def get_cutomers_cart(cls, username, session):
+        query = select(Customer.cart).where(Customer.username == username)\
+            .options(joinedload(Customer.wish_list))
+        result = await Customer._execute_query(query, session)
+        result = [i for i in result.unique().all()]
+        return result if result else None
+
     async def _modify_field(self, product, field, action, session):
         field = getattr(self, field)
         act = getattr(field, action)
@@ -96,25 +104,17 @@ class Customer(Base, DBMixin):
         else:
             return {'success': True}
 
-    async def add_to_field(self, product, field, session):
-        return await self._modify_field(product, field, 'append', session)
-
-    async def remove_from_field(self, product, field, session):
-        return await self._modify_field(product, field, 'remove', session)
-
     async def add_to_cart(self, product, session):
-        return await self.add_to_field(product, 'cart', session)
+        return await self._modify_field(product, 'cart', 'append', session)
 
     async def remove_from_cart(self, product, session):
-        return await self.remove_from_field(product, 'cart', session)
+        return await self._modify_field(product, 'cart', 'remove', session)
 
     async def add_to_wish_list(self, product, session):
-        return await self.add_to_field(product, 'wish_list', session)
+        return await self._modify_field(product, 'wish_list', 'append', session)
 
     async def remove_from_wish_list(self, product, session):
-        if product not in self.wish_list:
-            return False
-        return await self.remove_from_field(product, 'wish_list', session)
+        return await self._modify_field(product, 'wish_list', 'remove', session)
 
 
 customer_wish_list = Table(

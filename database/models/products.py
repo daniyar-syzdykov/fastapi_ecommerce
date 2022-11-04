@@ -7,11 +7,6 @@ from .. import Base
 from typing import NamedTuple
 
 
-class Page(NamedTuple):
-    from_: int
-    to: int
-
-
 class Product(Base, DBMixin):
     __tablename__ = 'products'
 
@@ -42,20 +37,13 @@ class Product(Base, DBMixin):
         sort_func = getattr(order_by, rate)
         return sort_func
 
-    @staticmethod
-    def _pagination(per_page,  page) -> Page:
-        from_ = per_page * page - per_page
-        to = per_page * page
-        return Page(from_, to)
-
     @classmethod
-    async def get_all(cls, session, per_page, page, rate, order):
+    async def get_all(cls, session, page_size, page, rate, order):
         sort_func = Product._get_sort_func(rate, order)
 
-        query = select(Product).order_by(sort_func())
+        query = select(Product).limit(page_size).offset(
+            page_size*(page - 1)).order_by(sort_func())
         result = await Product._execute_query(query, session)
         result = result.all()
 
-        page = Product._pagination(per_page, page)
-
-        return result[page.from_:page.to]
+        return result

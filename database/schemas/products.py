@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from pydantic import Field
-from . import BaseCustomerSchema, BaseProductSchema, BaseSchema, as_form
+from . import BaseCustomerSchema, BaseProductSchema, BaseSchema, BaseOrderSchema, as_form
+from .customers import CustomerResultSchema
 
 
 class Rate(str, Enum):
@@ -15,7 +16,9 @@ class Order(str, Enum):
 
 
 class ProductResultSchema(BaseProductSchema):
-    pass
+    cart: list[BaseCustomerSchema] | None = []
+    wish_list: list[BaseCustomerSchema] | None = []
+    orders: list[BaseOrderSchema] | None = []
 
 
 @as_form

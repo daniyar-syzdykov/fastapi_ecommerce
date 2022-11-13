@@ -1,5 +1,6 @@
-from . import BaseSchema, BaseProductSchema
+from . import BaseSchema, BaseProductSchema, BaseOrderSchema, BaseCustomerSchema
 
 
-class OderSchema(BaseSchema):
+class OrderResultShema(BaseOrderSchema):
+    customer: BaseCustomerSchema
     products: list[BaseProductSchema]

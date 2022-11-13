@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, joinedload
 from ..base import DBMixin
 from .. import Base
 from security.hasher import Hasher
-import inspect
+from collections.abc import Iterable
 
 
 class Customer(Base, DBMixin):
@@ -37,25 +37,25 @@ class Customer(Base, DBMixin):
         self._password = Hasher.hash_password(raw_password=raw_password)
 
     @classmethod
-    async def get_all(cls, session):
+    async def get_all(cls, session, fileds_to_load: list[str] = []):
         query = select(Customer).options(
-            joinedload(Customer.cart), joinedload(Customer.wish_list), joinedload(Customer.orders))
+            *Customer.list_of_fields(fileds_to_load))
         result = await Customer._execute_query(query, session)
         result = [i[0] for i in result.unique().all()]
         return result if result else None
 
     @classmethod
-    async def get_by_id(cls, id: int, session):
+    async def get_by_id(cls, id: int, session, fields_to_load: list[str] = []):
         query = select(Customer).where(Customer.id == id).options(
-            joinedload(Customer.cart), joinedload(Customer.wish_list), joinedload(Customer.orders))
+            *Customer.list_of_fields(fields_to_load))
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
         return result[0] if result else None
 
     @classmethod
-    async def get_by_username(cls, username: str, session):
+    async def get_by_username(cls, username: str, session, fields_to_load: list[str] = []):
         query = select(Customer).where(Customer.username == username).options(
-            joinedload(Customer.cart), joinedload(Customer.wish_list), joinedload(Customer.orders))
+            *Customer.list_of_fields(fields_to_load))
         result = await Customer._execute_query(query, session)
         result = result.unique().one_or_none()
         return result[0] if result else None
@@ -67,54 +67,45 @@ class Customer(Base, DBMixin):
         result = result.unique().one_or_none()
         return True if result else False
 
-    @classmethod
-    async def get_customer_with_cart(cls, username, session):
-        query = select(Customer).where(Customer.username ==
-                                       username).options(joinedload(Customer.cart))
-        result = await Customer._execute_query(query, session)
-        result = result.unique().one_or_none()
-        return result[0] if result else None
-
-    @classmethod
-    async def get_customer_with_wish_list(cls, username, session):
-        query = select(Customer).where(Customer.username ==
-                                       username).options(joinedload(Customer.wish_list))
-        result = await Customer._execute_query(query, session)
-        result = result.unique().one_or_none()
-        return result[0] if result else None
-
-    @classmethod
-    async def get_cutomers_cart(cls, username, session):
-        query = select(Customer.cart).where(Customer.username == username)\
-            .options(joinedload(Customer.wish_list))
-        result = await Customer._execute_query(query, session)
-        result = [i for i in result.unique().all()]
-        return result if result else None
-
-    async def _modify_field(self, product, field, action, session):
-        field = getattr(self, field)
+    async def _modify_field(self, obj, field_name, action, session):
+        field = getattr(self, field_name)
         act = getattr(field, action)
-        act(product)
-        session.add(self)
+        act(obj)
+        return {'success': True}
+
+    async def _modify_field_and_commit(self, objs: Iterable | object, field_name, action, session):
+        if not isinstance(objs, Iterable):
+            objs = [objs]
+
+        n = len(objs)
+        for _ in range(n):
+            await self._modify_field(objs[0], field_name, action, session)
         try:
+            session.add(self)
             await session.commit()
+            await session.refresh(self)
         except Exception as e:
-            session.rollback()
             raise e
-        else:
-            return {'success': True}
 
-    async def add_to_cart(self, product, session):
-        return await self._modify_field(product, 'cart', 'append', session)
+        return {'success': True}
 
-    async def remove_from_cart(self, product, session):
-        return await self._modify_field(product, 'cart', 'remove', session)
+    async def add_to_cart(self, products: Iterable | object, session):
+        return await self._modify_field_and_commit(products, 'cart', 'append', session)
 
-    async def add_to_wish_list(self, product, session):
-        return await self._modify_field(product, 'wish_list', 'append', session)
+    async def remove_from_cart(self, products: Iterable | object, session):
+        return await self._modify_field_and_commit(products, 'cart', 'remove', session)
 
-    async def remove_from_wish_list(self, product, session):
-        return await self._modify_field(product, 'wish_list', 'remove', session)
+    async def add_to_wish_list(self, products: Iterable | object, session):
+        return await self._modify_field_and_commit(products, 'wish_list', 'append', session)
+
+    async def remove_from_wish_list(self, products: Iterable | object, session):
+        return await self._modify_field_and_commit(products, 'wish_list', 'remove', session)
+
+    async def add_to_orders(self, orders: Iterable | object, session):
+        return await self._modify_field_and_commit(orders, 'orders', 'append', session)
+
+    async def remove_from_orders(self, orders: Iterable | object, session):
+        return await self._modify_field_and_commit(orders, 'orders', 'remove', session)
 
 
 customer_wish_list = Table(

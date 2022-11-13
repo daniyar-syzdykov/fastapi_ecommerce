@@ -1,5 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, update, delete, exists
+from sqlalchemy.orm import joinedload
 
 
 class DBMixin:
@@ -20,11 +21,12 @@ class DBMixin:
         session.add(new_object)
         try:
             await session.commit()
+            await session.refresh(new_object)
         except IntegrityError as e:
             await session.rollback()
             raise e
         else:
-            return new_object.__dict__
+            return new_object
 
     @classmethod
     async def get_all(cls, session):
@@ -47,7 +49,8 @@ class DBMixin:
             session.add(obj)
             await session.commit()
             await session.refresh(obj)
-            await session.close() # you have to manually close session otherwise test will throw RuntimeError (cause unknown)
+            # you have to manually close session otherwise test will throw RuntimeError (cause unknown)
+            await session.close()
         except Exception as e:
             raise e
         else:
@@ -74,5 +77,13 @@ class DBMixin:
         query = exists(cls).where(cls.id == id)
         result = await cls._execute_query(query, session)
         return True if result else False
+
+    @classmethod
+    def list_of_fields(cls, fields: list[str]):
+        ret = []
+        for field in fields:
+            f = getattr(cls, field)
+            ret.append(joinedload(f))
+        return ret
 
     __mapper_args__ = {"eager_defaults": True}

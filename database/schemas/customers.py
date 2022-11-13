@@ -7,9 +7,9 @@ class CustomerResultSchema(BaseCustomerSchema):
     name: str | None
     username: str
     uuid: str
-    wish_list: list[BaseProductSchema]
-    cart: list[BaseProductSchema]
-    orders: InstrumentedList[BaseOrderSchema]
+    wish_list: list[BaseProductSchema] | None = []
+    cart: list[BaseProductSchema] | None = []
+    orders: InstrumentedList[BaseOrderSchema] | None = []
 
 
 @as_form
@@ -24,10 +24,8 @@ class CustomerAuthSchema(BaseCustomerSchema):
 
 
 @as_form
-class CustomerUpdateSchema(BaseCustomerSchema):
+class CustomerUpdateSchema(BaseSchema):
     name: str | None
-    username: str | None
-    is_active: bool | None
 
 
 class CartSchema(BaseSchema):

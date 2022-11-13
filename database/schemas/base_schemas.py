@@ -1,4 +1,5 @@
 import inspect
+from datetime import datetime
 from fastapi import Form
 from pydantic import BaseModel
 
@@ -45,4 +46,5 @@ class BaseProductSchema(BaseSchema):
 
 class BaseOrderSchema(BaseSchema):
     id: int
-    created_at: str
+    created_at: datetime
+    # products: list[BaseProductSchema]

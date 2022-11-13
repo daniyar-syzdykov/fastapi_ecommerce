@@ -22,7 +22,7 @@ async def get_decoded_token(token=Depends(oauth2_scheme)):
 
 async def get_current_user(token=Depends(get_decoded_token), session=Depends(get_session)) -> Customer:
     username = token.get('username')
-    user_from_db: Customer = await Customer.get_by_username(username, session)
+    user_from_db: Customer = await Customer.get_by_username(username, session, fields_to_load=['cart', 'wish_list', 'orders'])
 
     if not user_from_db:
         raise HTTPException(
@@ -50,11 +50,15 @@ async def register_new_user(data: CustomerCreationSchema = Depends(CustomerCreat
         raise HTTPException(status_code=400, detail='Passwords does not match')
 
     try:
-        result = await Customer.create(session=session, username=data.username, password=data.password)
+        new_customer = await Customer.create(session=session, username=data.username, password=data.password)
+        result = await Customer.get_by_id(new_customer.id, session, [
+                                    'cart', 'wish_list', 'orders'])
+
+        result = CustomerResultSchema.from_orm(result)
     except Exception as e:
         raise e
     else:
-        return {'success': True}
+        return {'success': True, 'data': result}
 
 
 @auth_router.post('/token')
@@ -74,7 +78,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session=Depend
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@auth_router.post('')
+@auth_router.put('')
 async def forgot_password(username: str = Form(), session=Depends(get_session)):
     customer: Customer = Customer.get_by_username(username, session)
     if not Customer:

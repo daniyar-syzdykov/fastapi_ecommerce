@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from database.models import Customer, Product
-from database.models.customers import customer_cart, customer_wish_list
 from pydantic import parse_obj_as
-from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema, CustomerUpdateSchema, CustomerAuthSchema
+from database.models import Customer, Product, Order
+from database.schemas import CustomerResultSchema, CustomerCreationSchema, CartSchema, BaseProductSchema, CustomerUpdateSchema, CustomerAuthSchema, OrderResultShema
 from database.session import get_session
 from .auth import get_current_user, get_decoded_token, JWT
 from sqlalchemy import exc
@@ -13,10 +12,7 @@ customer_router = APIRouter(
 )
 
 
-async def add_to_customer_field(data, username, field_name, session):
-    get_field_func = getattr(Customer, f'get_customer_with_{field_name}')
-    customer: Customer = await get_field_func(username, session)
-
+async def add_to_customer_field(data, customer, field_name, session):
     product: Product = await Product.get_by_id(data.product_id, session)
     add_to_field = getattr(customer, f'add_to_{field_name}')
 
@@ -32,9 +28,7 @@ async def add_to_customer_field(data, username, field_name, session):
     return {'success': True}
 
 
-async def remove_from_customer_field(product_id: int, username: str, field_name, session):
-    get_field_func = getattr(Customer, f'get_customer_with_{field_name}')
-    customer: Customer = await get_field_func(username, session)
+async def remove_from_customer_field(product_id: int, customer, field_name, session):
     field = getattr(customer, field_name)
     customer_remove_function = getattr(customer, f'remove_from_{field_name}')
 
@@ -52,7 +46,7 @@ async def get_all_customers(customer: Customer = Depends(get_current_user), sess
             status_code=401, detail='You have no permission to view this page')
 
     try:
-        db_customers = await Customer.get_all(session=session)
+        db_customers = await Customer.get_all(session=session, fileds_to_load=['cart', 'wish_list', 'orders'])
 
         if not db_customers:
             return {'success': False, 'detail': 'There is no users in DB'}
@@ -71,11 +65,11 @@ async def get_customer_by_id(id: int, customer: Customer = Depends(get_current_u
             status_code=401, detail='You have no permission to view this page')
 
     try:
-        db_customer = await Customer.get_by_id(id, session=session)
+        db_customer = await Customer.get_by_id(id, session=session, fields_to_load=['cart', 'wish_list', 'orders'])
 
         if not db_customer:
-            return {'success': False, 'detail': 'There is no users in DB'}
-
+            raise HTTPException(
+                status_code=404, detail='This customer does not exists')
         customer = CustomerResultSchema.from_orm(db_customer)
     except Exception as e:
         raise e
@@ -91,29 +85,46 @@ async def update_customer_profile(id: int, data: CustomerUpdateSchema = Depends(
 
     try:
         updated_customer = await Customer.update(id=id, session=session, **data.dict())
-        auth_customer = CustomerAuthSchema.from_orm(updated_customer)
-        access_token = JWT.gen_new_access_token(auth_customer.dict())
     except Exception as e:
         raise e
 
-    return {'success': True, 'access_token': access_token, 'token_type': 'bearer'}
+    return {'success': True}
 
 
 @customer_router.post('/cart')
 async def add_to_customers_cart(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
-    return await add_to_customer_field(data, token.get('username'), 'cart', session)
+    customer: Customer = await Customer.get_by_username(token.get('username'), session, fields_to_load=['cart'])
+    return await add_to_customer_field(data, customer, 'cart', session)
 
 
 @customer_router.post('/wishlist')
 async def add_to_customers_wish_list(data: CartSchema, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
-    return await add_to_customer_field(data, token.get('username'), 'wish_list', session)
+    customer: Customer = await Customer.get_by_username(token.get('username'), session, fields_to_load=['wish_list'])
+    return await add_to_customer_field(data, customer, 'wish_list', session)
 
 
 @customer_router.delete('/cart/{product_id}')
 async def remove_from_customer_cart(product_id: int, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
-    return await remove_from_customer_field(product_id, token.get('username'), 'cart', session)
+    customer: Customer = await Customer.get_by_username(token.get('username'), session, fields_to_load=['cart'])
+    return await remove_from_customer_field(product_id, customer, 'cart', session)
 
 
 @customer_router.delete('/wishlist/{product_id}')
 async def remove_from_customer_wish_list(product_id: int, token: Customer = Depends(get_decoded_token), session=Depends(get_session)):
-    return await remove_from_customer_field(product_id, token.get('username'), 'wish_list', session)
+    customer: Customer = await Customer.get_by_username(token.get('username'), session, fields_to_load=['wish_list'])
+    return await remove_from_customer_field(product_id, customer, 'wish_list', session)
+
+
+async def create_order(customer: Customer, session) -> Order:
+    new_order: Order = await Order.create(session, products=[product for product in customer.cart])
+    order: Order = await Order.get_by_id(id=new_order.id, session=session, fields=['customer', 'products'])
+
+    return order
+
+
+@customer_router.post('/orders', status_code=201)
+async def make_purchase(customer: Customer = Depends(get_current_user), session=Depends(get_session)):
+    new_order = await create_order(customer, session=session)
+    await customer.add_to_orders(new_order, session)
+    await customer.remove_from_cart(customer.cart, session)
+    return {'success': True}

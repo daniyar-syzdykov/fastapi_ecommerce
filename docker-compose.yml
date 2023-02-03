@@ -1,0 +1,36 @@
+version: '3.8'
+
+volumes:
+  postresql_data:
+
+
+services:
+  web:
+    build: .
+    command: /bin/sh -c 'uvicorn server:app --host "0.0.0.0" --port 8000 --reload'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ".:/app"
+    depends_on:
+      - db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+
+  db:
+    image: "postgres"
+    volumes:
+      - postresql_data:/var/lib/postgresql/data
+    command: -p 5432
+    ports:
+      - "5434:5432"
+    expose:
+      - 5434
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres

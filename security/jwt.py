@@ -2,7 +2,7 @@ import datetime
 from fastapi import HTTPException
 from jose import jwt, JWTError
 from jose import exceptions as jwt_exc
-from config import SECRET, ALGORITHM
+from config import settings
 
 
 class JWT:
@@ -10,7 +10,7 @@ class JWT:
     def decode_token(token):
         try:
             decoded_token = jwt.decode(
-                token=token, key=SECRET, algorithms=[ALGORITHM])
+                token=token, key=settings.SECRET, algorithms=[settings.ALGORITHM])
         except jwt_exc.ExpiredSignatureError:
             raise HTTPException(
                 status_code=400, detail='Your access token has expired')
@@ -25,5 +25,5 @@ class JWT:
         data.update({'exp': expires})
 
         access_token = jwt.encode(
-            claims=data, key=SECRET, algorithm=ALGORITHM)
+            claims=data, key=settings.SECRET, algorithm=settings.ALGORITHM)
         return access_token
